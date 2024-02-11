@@ -20,18 +20,13 @@ class AVLNode(object):
 		self.value = value
 		self.left = None
 		self.right = None
-		self.sz = 0
-		if self.key != None:
-			self.left = AVLNode(None,None)
-			self.right = AVLNode(None,None)
-			self.left.parent = self
-			self.right.parent = self
 		self.parent = None
+		self.height = -1
 		if self.key != None:
 			self.height = 0
-			self.sz = 1
-		else:
-			self.height = -1
+		if self.key != None:
+			self.set_left(AVLNode(None,None))
+			self.set_right(AVLNode(None,None))
 		
 
 	"""returns the left child
@@ -96,7 +91,7 @@ class AVLNode(object):
 	def set_left(self, node):
 		self.left = node
 		self.height = max(self.height,self.left.height+1)
-		node.sz += node.sz
+		node.parent = self
 
 
 	"""sets right child
@@ -106,8 +101,8 @@ class AVLNode(object):
 	"""
 	def set_right(self, node):
 		self.right = node
+		node.parent = self
 		self.height = max(self.height,self.right.height+1)
-		self.sz += node.sz
 
 
 	def set_child(self, node):
@@ -149,20 +144,11 @@ class AVLNode(object):
 	@type h: int
 	@param h: the height
 	"""
-	def set_height(self, h):
-		self.height = h
-
 
 	def BF(self):
 		if not self.is_real_node():
 			return 0
-		l = 0
-		r = 0
-		if self.left.is_real_node():
-			l = self.left.height
-		if self.right.is_real_node():
-			r = self.right.height
-		return l-r
+		return self.left.height - self.right.height
 
 	"""returns whether self is not a virtual node 
 
@@ -173,6 +159,9 @@ class AVLNode(object):
 		if self.value == None:
 			return False
 		return True
+
+	def fixHeight(self):
+		self.height = max(self.left.height,self.right.height)+1
 
 	def RotateLeft(self):
 		A = self.right
@@ -187,6 +176,9 @@ class AVLNode(object):
 			else:
 				A.parent.left = A
 		B.parent = A
+		A.fixHeight()
+		B.fixHeight()
+
 
 	def RotateRight(self):
 		A = self.left
@@ -201,7 +193,8 @@ class AVLNode(object):
 			else:
 				A.parent.right = A
 		B.parent = A
-
+		A.fixHeight()
+		B.fixHeight()
 
 """
 A class implementing the ADT Dictionary, using an AVL tree.
@@ -210,20 +203,17 @@ A class implementing the ADT Dictionary, using an AVL tree.
 class AVLTree(object):
 
 	"""
-	Constructor, you are allowed to add more fields.  
+	Constructor, you are allowed to add more fields.
 
 	"""
-	def __init__(self):
-		self.root = AVLNode(None,None)
-		#self.left = None
-		#self.right = None
-		#self.sz = 0
-		#self.real = False
+	def __init__(self, head = AVLNode(None,None)):
+		self.root = head
+		self.sz = 0
 		# add your fields here
 
-	def initRoot(self,node): #Initialize a tree with a root.
-		self.root = node
-		#self.sz = 1
+
+	def Successor(self, node):
+		pass
 
 	"""searches for a AVLNode in the dictionary corresponding to the key
 
@@ -233,16 +223,16 @@ class AVLTree(object):
 	@returns: the AVLNode corresponding to key or None if key is not found.
 	"""
 
-	def searchCand(self,key,node = self.root): #Finds the sole candidate for position of key
-		if self.root == None:
-			return None
-		if self.root.get_key()==key:
-			return self.root
-		if self.root.get_left().is_real_node() and self.root.get_key() > key:
-			return self.left.searchCand(key)
-		elif self.root.get_right().is_real_node():
-			return self.right.searchCand(key)
-		return self.root
+	def searchCand(self,key,node = None): #Finds the sole candidate for position of key
+		if node == None:
+			node = self.root
+		if node.get_key()==key:
+			return node
+		if node.get_left().is_real_node() and node.get_key() > key:
+			return self.searchCand(key,node.get_left())
+		elif node.get_right().is_real_node():
+			return self.searchCand(key,node.get_right())
+		return node
 
 	def search(self, key):
 		if(self.sz == 0):
@@ -266,38 +256,45 @@ class AVLTree(object):
 	"""
 	def insert(self, key, val):
 		if self.sz == 0:
-			self.initRoot(AVLNode(key,val))
+			self.root = AVLNode(key, val)
+			self.sz += 1
 			return 0
+		self.sz += 1
 		par = self.searchCand(key)
-		par.set_child(AVLNode(key,val))
-		if par.get_left().get_key() == key:
-			par.left = AVLTree()
-			par.left = par.left.initRoot(AVLNode(key,val))
-		else:
-			par.right = AVLTree()
-			par.right = par.right.initRoot(AVLNode(key,val))
+		vertex = AVLNode(key,val)
+		vertex.set_parent(par) # New edge (vertex,par) in the graph
 
-		runner = par #As the name indicates, running on all ancestors.
+		runner = par # As the name indicates, running on all ancestors.
+		runner = runner.get_parent()
 		result = 0
 		while runner != None:
-			runner.sz += 1
+			flag = runner.get_parent() == None
 			last = runner.get_height()
-			runner.set_height(max(runner.get_left().get_height(),runner.get_right().get_height())+1)#Adjusting height
+			runner.fixHeight()
+			if runner.get_height() == last:
+				break
 
 			if runner.BF() == -2:
 				if runner.right.BF() == 1:
 					runner.get_right().RotateRight()
 					result += 1
 				runner.RotateLeft()
+				if flag:
+					self.root = self.root.get_parent()
 				result += 1
+
 			elif runner.BF() == 2:
-				if runner.right.BF() == -11:
+				if runner.right.BF() == -1:
 					runner.get_left().RotateLeft()
 					result += 1
 				runner.RotateRight()
+				if flag:
+					self.root = self.root.get_parent()
 				result += 1
 			runner = runner.get_parent()
 		return result
+
+
 	"""deletes node from the dictionary
 
 	@type node: AVLNode
@@ -306,6 +303,7 @@ class AVLTree(object):
 	@returns: the number of rebalancing operation due to AVL rebalancing
 	"""
 	def delete(self, node):
+		sz -= 1
 		return -1
 
 
@@ -314,8 +312,12 @@ class AVLTree(object):
 	@rtype: list
 	@returns: a sorted list according to key of touples (key, value) representing the data structure
 	"""
+
+	def daq(self, node): # Divide and conquer strat
+		return daq(self,node.get_left()) + [self.root] + daq(self,node.get_right())
+
 	def avl_to_array(self):
-		return None
+		return daq(self,self.root)
 
 
 	"""returns the number of items in dictionary 
@@ -324,7 +326,7 @@ class AVLTree(object):
 	@returns: the number of items in dictionary 
 	"""
 	def size(self):
-		return -1	
+		return self.sz
 
 	
 	"""splits the dictionary at the i'th index
@@ -363,4 +365,4 @@ class AVLTree(object):
 	@returns: the root, None if the dictionary is empty
 	"""
 	def get_root(self):
-		return None
+		return self.root
