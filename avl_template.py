@@ -211,9 +211,23 @@ class AVLTree(object):
 		self.sz = 0
 		# add your fields here
 
-
 	def Successor(self, node):
-		pass
+		if self.sz == 1:
+			return None
+		if node.get_right().is_real_node():
+			succ = node.get_right()
+			while succ.get_left().is_real_node():
+				succ = succ.get_left()
+			return succ
+		else:
+			succ = node.get_parent()
+			prev = node
+			while succ.get_parent() != None and succ.get_right() == node:
+				succ = succ.get_parent()
+				prev = succ
+			if succ.get_key() > node.get_key():
+				return succ
+		return None
 
 	"""searches for a AVLNode in the dictionary corresponding to the key
 
