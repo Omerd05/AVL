@@ -90,7 +90,7 @@ class AVLNode(object):
 	"""
 	def set_left(self, node):
 		self.left = node
-		self.height = max(self.height,self.left.height+1)
+		#self.height = max(self.height,self.left.height+1)
 		node.parent = self
 
 
@@ -102,7 +102,7 @@ class AVLNode(object):
 	def set_right(self, node):
 		self.right = node
 		node.parent = self
-		self.height = max(self.height,self.right.height+1)
+		#self.height = max(self.height,self.right.height+1)
 
 
 	def set_child(self, node, direction = -1):
@@ -125,7 +125,8 @@ class AVLNode(object):
 	"""
 	def set_parent(self, node,direction = -1):
 		self.parent = node
-		node.set_child(self,direction)
+		if node != None :
+			node.set_child(self,direction)
 
 
 	"""sets key
@@ -268,16 +269,20 @@ class AVLTree(object):
 	#Gets a node in tree and balancing the tree all the way up from it
 	#Returning the number of needed rotations to balance.
 	#Also updates heights
-	def balancing(self,node):
+	def balancing(self,node, insertionMode = False):
 		runner = node  # As the name indicates, running on all ancestors.
+		result = runner.get_height()
 		runner.fixHeight()
+		result = 0 if result == runner.get_height() else 1
 		runner = runner.get_parent()
-		result = 0
+
 		while runner != None:
 			flag = runner.get_parent() == None
 			last = runner.get_height()
 			runner.fixHeight()
-			if runner.get_height() == last:
+			if runner.get_height() != last:
+				result += 1
+			elif insertionMode:
 				break
 
 			if runner.BF() == -2:
@@ -287,7 +292,6 @@ class AVLTree(object):
 				runner.RotateLeft()
 				if flag:
 					self.root = self.root.get_parent()
-				result += 1
 
 			elif runner.BF() == 2:
 				if runner.right.BF() == -1:
@@ -296,7 +300,6 @@ class AVLTree(object):
 				runner.RotateRight()
 				if flag:
 					self.root = self.root.get_parent()
-				result += 1
 			runner = runner.get_parent()
 		return result
 
@@ -318,7 +321,7 @@ class AVLTree(object):
 		par = self.searchCand(key)
 		vertex = AVLNode(key,val)
 		vertex.set_parent(par) # New edge (vertex,par) in the graph
-		return self.balancing(par)
+		return self.balancing(par,True)
 
 
 	"""deletes node from the dictionary
@@ -344,6 +347,8 @@ class AVLTree(object):
 				succ.get_parent().set_left(succ.get_right())
 				if node.get_parent() != None:
 					node.get_parent().set_child(succ)
+				else:
+					succ.set_parent(None)
 				succ.set_child(node.get_left(),0)
 				succ.set_child(node.get_right(),1)
 
@@ -360,20 +365,20 @@ class AVLTree(object):
 		return result
 
 
+	def daq(self, node): # Divide and conquer strat
+		result = []
+		if node.get_left().is_real_node():
+			result += self.daq(node.get_left())
+		result += [(node.get_key(),node.get_value())]
+		if node.get_right().is_real_node():
+			result += self.daq(node.get_right())
+		return result
+
 	"""returns an array representing dictionary 
 
 	@rtype: list
 	@returns: a sorted list according to key of touples (key, value) representing the data structure
 	"""
-
-	def daq(self, node): # Divide and conquer strat
-		result = []
-		if node.get_left().is_real_node():
-			result += self.daq(node.get_left())
-		result += [node.get_key()]
-		if node.get_right().is_real_node():
-			result += self.daq(node.get_right())
-		return result
 
 	def avl_to_array(self):
 		return self.daq(self.root)
@@ -399,9 +404,19 @@ class AVLTree(object):
 	dictionary larger than node.key.
 	"""
 	def split(self, node):
-		return None
+		small = AVLTree(node.get_left())
+		big = AVLTree(node.get_right())
+		ancestor = node.get_parent()
+		curr = node
+		while ancestor != None:
+			if ancestor.get_right() == curr and curr != node:
+				small.join(AVLTree(ancestor.get_left()),ancestor.get_key(),ancestor.get_value())
+			elif curr != node:
+				big.join(AVLTree(ancestor.get_right()),ancestor.get_key(),ancestor.get_value())
+			curr = ancestor
+			ancestor = ancestor.get_parent()
+		return [small,big]
 
-	
 	"""joins self with key and another AVLTree
 
 	@type tree2: AVLTree 
@@ -414,9 +429,42 @@ class AVLTree(object):
 	@rtype: int
 	@returns: the absolute value of the difference between the height of the AVL trees joined
 	"""
-	def join(self, tree2, key, val):
-		return None
 
+	#Needs to check whether tree2/self can be empty
+	def join(self, tree2, key, val):
+		merged = AVLNode(key, val)
+		result = abs(self.root.get_height()-tree2.root.get_height())
+
+		#Edge cases
+		if self.sz == 0:
+			tree2.insert(merged)
+			return result
+		if tree2.sz == 0:
+			self.insert(merged)
+			return result
+
+		if self.get_root().get_height() == tree2.get_root().get_height():
+			merged.set_left(self.get_root())
+			merged.set_right(tree2.get_root())
+			self.root = merged
+			#self.root.fixHeight()
+		elif self.get_root().get_height() < tree2.get_root().get_height():
+			cand = tree2.root
+			while cand.get_left().is_real_node() and cand.get_height() > self.root.get_height():
+				cand = cand.get_left()
+			merged.set_parent(cand.get_parent())
+			merged.set_left(self.root)
+			merged.set_right(cand)
+		else:
+			cand = self.root
+			while cand.get_right().is_real_node() and cand.get_height() > tree2.root.get_height():
+				cand = cand.get_right()
+			merged.set_parent(cand.get_parent())
+			merged.set_left(cand)
+			merged.set_right(tree2.root)
+
+		self.balancing(merged)
+		return result
 
 	"""returns the root of the tree representing the dictionary
 
@@ -424,6 +472,6 @@ class AVLTree(object):
 	@returns: the root, None if the dictionary is empty
 	"""
 	def get_root(self):
-		if self.sz == 0:
+		if self.root.get_key() == None:
 			return None
 		return self.root
