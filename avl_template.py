@@ -250,10 +250,16 @@ class AVLTree(object):
 			node = self.root
 		if node.get_key()==key:
 			return node
-		if node.get_left().is_real_node() and node.get_key() > key:
-			return self.searchCand(key,node.get_left())
-		elif node.get_right().is_real_node():
-			return self.searchCand(key,node.get_right())
+		if node.get_key() > key:
+			if node.get_left().is_real_node():
+				return self.searchCand(key, node.get_left())
+			else:
+				node
+		else:
+			if node.get_right().is_real_node():
+				return self.searchCand(key, node.get_right())
+			else:
+				return node
 		return node
 
 	def search(self, key):
@@ -432,16 +438,23 @@ class AVLTree(object):
 
 	#Needs to check whether tree2/self can be empty
 	def join(self, tree2, key, val):
-		merged = AVLNode(key, val)
-		result = abs(self.root.get_height()-tree2.root.get_height())
-
+		result = abs(self.root.get_height()-tree2.root.get_height()) + 1
 		#Edge cases
+		if self.sz == 0 and tree2.sz == 0:
+			self.insert(key,val)
+			return 1
 		if self.sz == 0:
-			tree2.insert(merged)
+			tree2.insert(key,val)
+			self.root = tree2.root
+			self.sz = tree2.sz
 			return result
 		if tree2.sz == 0:
-			self.insert(merged)
+			self.insert(key,val)
 			return result
+
+		#Regular cases
+		self.sz += tree2.sz + 1
+		merged = AVLNode(key, val)
 
 		if self.get_root().get_height() == tree2.get_root().get_height():
 			merged.set_left(self.get_root())
