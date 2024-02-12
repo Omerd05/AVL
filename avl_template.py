@@ -105,20 +105,27 @@ class AVLNode(object):
 		self.height = max(self.height,self.right.height+1)
 
 
-	def set_child(self, node):
-		if self.key > node.key:
-			self.set_left(node)
-		else:
-			self.set_right(node)
+	def set_child(self, node, direction = -1):
+		if node.is_real_node():
+			if self.key > node.key:
+				self.set_left(node)
+			else:
+				self.set_right(node)
+		elif direction != -1: #0-left,1-right
+			if direction == 0:
+				self.set_left(node)
+			else:
+				self.set_right(node)
+
 
 	"""sets parent
 
 	@type node: AVLNode
 	@param node: a node
 	"""
-	def set_parent(self, node):
+	def set_parent(self, node,direction = -1):
 		self.parent = node
-		node.set_child(self)
+		node.set_child(self,direction)
 
 
 	"""sets key
@@ -258,27 +265,12 @@ class AVLTree(object):
 			return None
 
 
-	"""inserts val at position i in the dictionary
-
-	@type key: int
-	@pre: key currently does not appear in the dictionary
-	@param key: key of item that is to be inserted to self
-	@type val: any
-	@param val: the value of the item
-	@rtype: int
-	@returns: the number of rebalancing operation due to AVL rebalancing
-	"""
-	def insert(self, key, val):
-		if self.sz == 0:
-			self.root = AVLNode(key, val)
-			self.sz += 1
-			return 0
-		self.sz += 1
-		par = self.searchCand(key)
-		vertex = AVLNode(key,val)
-		vertex.set_parent(par) # New edge (vertex,par) in the graph
-
-		runner = par # As the name indicates, running on all ancestors.
+	#Gets a node in tree and balancing the tree all the way up from it
+	#Returning the number of needed rotations to balance.
+	#Also updates heights
+	def balancing(self,node):
+		runner = node  # As the name indicates, running on all ancestors.
+		runner.fixHeight()
 		runner = runner.get_parent()
 		result = 0
 		while runner != None:
@@ -308,6 +300,26 @@ class AVLTree(object):
 			runner = runner.get_parent()
 		return result
 
+	"""inserts val at position i in the dictionary
+	@type key: int
+	@pre: key currently does not appear in the dictionary
+	@param key: key of item that is to be inserted to self
+	@type val: any
+	@param val: the value of the item
+	@rtype: int
+	@returns: the number of rebalancing operation due to AVL rebalancing
+	"""
+	def insert(self, key, val):
+		if self.sz == 0:
+			self.root = AVLNode(key, val)
+			self.sz += 1
+			return 0
+		self.sz += 1
+		par = self.searchCand(key)
+		vertex = AVLNode(key,val)
+		vertex.set_parent(par) # New edge (vertex,par) in the graph
+		return self.balancing(par)
+
 
 	"""deletes node from the dictionary
 
@@ -317,8 +329,35 @@ class AVLTree(object):
 	@returns: the number of rebalancing operation due to AVL rebalancing
 	"""
 	def delete(self, node):
-		sz -= 1
-		return -1
+		self.sz -= 1
+		#Has to be careful and prevent loops for example in (1)<-(3)->(4) when deleting 4. a correction is needed.
+		runner = AVLNode(None,None)
+		if node.get_right().is_real_node():
+			succ = self.Successor(node)
+			if node.get_right().get_key() == succ.get_key(): #Meaning right son has no left child\node.right=succ
+				runner = succ
+				if node.get_parent() != None:
+					node.get_parent().set_child(succ)
+				node.get_left().set_parent(succ,0)
+			else:
+				runner = succ.get_parent()
+				succ.get_parent().set_left(succ.get_right())
+				if node.get_parent() != None:
+					node.get_parent().set_child(succ)
+				succ.set_child(node.get_left(),0)
+				succ.set_child(node.get_right(),1)
+
+		else:
+			if node.get_parent() != None:
+				runner = node.get_parent()
+				node.get_parent().set_child(node.get_left(),0 if node.get_key() == node.get_parent().get_left().get_key() else 1)
+			pass
+
+		if node.get_key() == self.root.get_key():
+			self.root = self.root.get_left().get_parent()
+
+		result = self.balancing(runner)
+		return result
 
 
 	"""returns an array representing dictionary 
@@ -328,10 +367,16 @@ class AVLTree(object):
 	"""
 
 	def daq(self, node): # Divide and conquer strat
-		return daq(self,node.get_left()) + [self.root] + daq(self,node.get_right())
+		result = []
+		if node.get_left().is_real_node():
+			result += self.daq(node.get_left())
+		result += [node.get_key()]
+		if node.get_right().is_real_node():
+			result += self.daq(node.get_right())
+		return result
 
 	def avl_to_array(self):
-		return daq(self,self.root)
+		return self.daq(self.root)
 
 
 	"""returns the number of items in dictionary 
@@ -379,4 +424,6 @@ class AVLTree(object):
 	@returns: the root, None if the dictionary is empty
 	"""
 	def get_root(self):
+		if self.sz == 0:
+			return None
 		return self.root
