@@ -339,7 +339,7 @@ class AVLTree(object):
 	"""
 	def delete(self, node):
 		self.sz -= 1
-		#Has to be careful and prevent loops for example in (1)<-(3)->(4) when deleting 4. a correction is needed.
+		#Has to be careful and prevent loops for example in (1)<-(3)->(4) when deleting 4.
 		runner = AVLNode(None,None)
 		if node.get_right().is_real_node():
 			succ = self.Successor(node)
@@ -411,7 +411,10 @@ class AVLTree(object):
 	"""
 	def split(self, node):
 		small = AVLTree(node.get_left())
+		node.get_left().set_parent(None)
 		big = AVLTree(node.get_right())
+		node.get_right().set_parent(None)
+
 		ancestor = node.get_parent()
 		curr = node
 		while ancestor != None:
