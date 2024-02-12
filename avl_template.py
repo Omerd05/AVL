@@ -1,10 +1,6 @@
-#username - complete info
-#id1      - complete info 
-#name1    - complete info 
-#id2      - complete info
-#name2    - complete info  
-
-
+#username - omerdrori
+#id1      - 216002089
+#name1    - omer drori
 
 """A class represnting a node in an AVL tree"""
 
