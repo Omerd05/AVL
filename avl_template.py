@@ -2,6 +2,7 @@
 #id1      - 216002089
 #name1    - omer drori
 
+
 """A class represnting a node in an AVL tree"""
 
 class AVLNode(object):
@@ -296,7 +297,7 @@ class AVLTree(object):
 					self.root = self.root.get_parent()
 
 			elif runner.BF() == 2:
-				if runner.right.BF() == -1:
+				if runner.get_left().BF() == -1:
 					runner.get_left().RotateLeft()
 					result += 1
 				runner.RotateRight()
