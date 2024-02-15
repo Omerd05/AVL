@@ -12,7 +12,7 @@ class AVLNode(object):
 	@type value: any
 	@param value: data of your node
 	"""
-	def __init__(self, key, value):
+	def __init__(self, key=None, value=None):
 		self.key = key
 		self.value = value
 		self.left = None
@@ -217,7 +217,7 @@ class AVLTree(object):
 		# add your fields here
 
 	def Successor(self, node):
-		if self.sz == 1:
+		if self.root.get_left().get_key() == None and self.root.get_right().get_key() == None:
 			return None
 		if node.get_right().is_real_node():
 			succ = node.get_right()
@@ -260,7 +260,7 @@ class AVLTree(object):
 		return node
 
 	def search(self, key):
-		if(self.sz == 0):
+		if(self.root.get_key() == None):
 			return None
 		cand = self.searchCand(key)
 		if cand.get_key() == key:
@@ -316,7 +316,7 @@ class AVLTree(object):
 	@returns: the number of rebalancing operation due to AVL rebalancing
 	"""
 	def insert(self, key, val):
-		if self.sz == 0:
+		if self.root.get_key() == None:
 			self.root = AVLNode(key, val)
 			self.sz += 1
 			return 0
@@ -407,20 +407,38 @@ class AVLTree(object):
 	dictionary larger than node.key.
 	"""
 	def split(self, node):
+		if node == self.root:
+			return AVLTree(node.get_left()),AVLNode(node.get_right())
+
 		small = AVLTree(node.get_left())
 		node.get_left().set_parent(None)
 		big = AVLTree(node.get_right())
 		node.get_right().set_parent(None)
 
-		ancestor = node.get_parent()
+
 		curr = node
-		while ancestor != None:
-			if ancestor.get_right() == curr and curr != node:
-				small.join(AVLTree(ancestor.get_left()),ancestor.get_key(),ancestor.get_value())
-			elif curr != node:
-				big.join(AVLTree(ancestor.get_right()),ancestor.get_key(),ancestor.get_value())
-			curr = ancestor
-			ancestor = ancestor.get_parent()
+		father = curr.get_parent()
+		gfather = father.get_parent()
+		while father != None:
+			if father.get_right() == curr: #i.e. the root and the left subtree are smaller
+				father.set_parent(None)
+				father.get_left().set_parent(None)
+				T = AVLTree(father.get_left())
+				T.join(small,father.get_key(),father.get_value())
+				small = T
+				father.set_left(AVLNode())
+
+			else:
+				father.set_parent(None)
+				father.get_right().set_parent(None)
+				big.join(AVLTree(father.get_right()),father.get_key(),father.get_value())
+				father.set_right(AVLNode())
+
+			curr = father
+			father = gfather
+			if gfather != None:
+				gfather = gfather.get_parent()
+
 		return [small,big]
 
 	"""joins self with key and another AVLTree
@@ -440,15 +458,15 @@ class AVLTree(object):
 	def join(self, tree2, key, val):
 		result = abs(self.root.get_height()-tree2.root.get_height()) + 1
 		#Edge cases
-		if self.sz == 0 and tree2.sz == 0:
+		if self.root.get_key() == None and tree2.root.get_key() == None:
 			self.insert(key,val)
 			return 1
-		if self.sz == 0:
+		if self.root.get_key() == None:
 			tree2.insert(key,val)
 			self.root = tree2.root
 			self.sz = tree2.sz
 			return result
-		if tree2.sz == 0:
+		if tree2.root.get_key() == None:
 			self.insert(key,val)
 			return result
 
@@ -460,7 +478,6 @@ class AVLTree(object):
 			merged.set_left(self.get_root())
 			merged.set_right(tree2.get_root())
 			self.root = merged
-			#self.root.fixHeight()
 		elif self.get_root().get_height() < tree2.get_root().get_height():
 			cand = tree2.root
 			while cand.get_left().is_real_node() and cand.get_height() > self.root.get_height():
@@ -468,6 +485,7 @@ class AVLTree(object):
 			merged.set_parent(cand.get_parent())
 			merged.set_left(self.root)
 			merged.set_right(cand)
+			self.root = tree2.root
 		else:
 			cand = self.root
 			while cand.get_right().is_real_node() and cand.get_height() > tree2.root.get_height():
@@ -476,8 +494,12 @@ class AVLTree(object):
 			merged.set_left(cand)
 			merged.set_right(tree2.root)
 
+
 		self.balancing(merged)
 		return result
+
+
+
 
 	"""returns the root of the tree representing the dictionary
 
