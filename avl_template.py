@@ -6,12 +6,13 @@
 """A class represnting a node in an AVL tree"""
 
 class AVLNode(object):
-	"""Constructor, you are allowed to add more fields. 
-
+	"""Constructor
 	@type key: int or None
 	@type value: any
 	@param value: data of your node
+	O(1) time complexity
 	"""
+
 	def __init__(self, key=None, value=None):
 		self.key = key
 		self.value = value
@@ -29,7 +30,9 @@ class AVLNode(object):
 	"""returns the left child
 	@rtype: AVLNode
 	@returns: the left child of self, None if there is no left child (if self is virtual)
+	O(1) time complexity
 	"""
+
 	def get_left(self):
 		return self.left
 
@@ -39,7 +42,9 @@ class AVLNode(object):
 
 	@rtype: AVLNode
 	@returns: the right child of self, None if there is no right child (if self is virtual)
+	O(1) time complexity
 	"""
+
 	def get_right(self):
 		return self.right
 
@@ -48,6 +53,7 @@ class AVLNode(object):
 
 	@rtype: AVLNode
 	@returns: the parent of self, None if there is no parent
+	O(1) time complexity
 	"""
 	def get_parent(self):
 		return self.parent
@@ -57,6 +63,7 @@ class AVLNode(object):
 
 	@rtype: int or None
 	@returns: the key of self, None if the node is virtual
+	O(1) time complexity
 	"""
 	def get_key(self):
 		return self.key
@@ -66,6 +73,7 @@ class AVLNode(object):
 
 	@rtype: any
 	@returns: the value of self, None if the node is virtual
+	O(1) time complexity
 	"""
 	def get_value(self):
 		return self.value
@@ -75,15 +83,18 @@ class AVLNode(object):
 
 	@rtype: int
 	@returns: the height of self, -1 if the node is virtual
+	O(1) time complexity
 	"""
 	def get_height(self):
 		return self.height
+
 
 
 	"""sets left child
 
 	@type node: AVLNode
 	@param node: a node
+	O(1) time complexity
 	"""
 
 	# Creates 2 edges - (u->v) AND (v->u)
@@ -97,16 +108,18 @@ class AVLNode(object):
 
 	@type node: AVLNode
 	@param node: a node
+	O(1) time complexity
 	"""
 
 	#Creates 2 edges - (u->v) AND (v->u)
 	def set_right(self, node):
 		self.right = node
 		node.parent = self
-		#self.height = max(self.height,self.right.height+1)
 
 
+	#Private method
 	#Choosing correct position for node, just a simplification for later.
+	#Working in O(1) time complexity
 	def set_child(self, node, direction = -1):
 		if node.is_real_node():
 			if self.key > node.key:
@@ -124,6 +137,7 @@ class AVLNode(object):
 
 	@type node: AVLNode
 	@param node: a node
+	O(1) time complexity
 	"""
 	def set_parent(self, node,direction = -1):
 		self.parent = node
@@ -135,6 +149,7 @@ class AVLNode(object):
 
 	@type key: int or None
 	@param key: key
+	O(1) time complexity
 	"""
 	def set_key(self, key):
 		self.key = key
@@ -144,6 +159,7 @@ class AVLNode(object):
 
 	@type value: any
 	@param value: data
+	O(1) time complexity
 	"""
 	def set_value(self, value):
 		self.value = value
@@ -153,6 +169,7 @@ class AVLNode(object):
 
 	@type h: int
 	@param h: the height
+	O(1) time complexity
 	"""
 
 	def BF(self):
@@ -164,17 +181,23 @@ class AVLNode(object):
 
 	@rtype: bool
 	@returns: False if self is a virtual node, True otherwise.
+	O(1) time complexity
 	"""
 	def is_real_node(self):
 		if self.value == None:
 			return False
 		return True
 
+	#Private method
+	#Adjusting the node's height to its correct value
+	#O(1) time complexity
 	def fixHeight(self):
 		if self.key == None:
 			return
 		self.height = max(self.left.height,self.right.height)+1
 
+	#Rotating a vertex to the left, implementing the same algorithm as shown in the lecture.
+	#O(1) - just playing with <= 4 pointers.
 	def RotateLeft(self):
 		A = self.right
 		B = self
@@ -191,7 +214,8 @@ class AVLNode(object):
 		A.fixHeight()
 		B.fixHeight()
 
-
+	#Rotating a vertex to the right, implementing the same algorithm as shown in the lecture.
+	#O(1) - just playing with <= 4 pointers.
 	def RotateRight(self):
 		A = self.left
 		B = self
@@ -215,8 +239,8 @@ A class implementing the ADT Dictionary, using an AVL tree.
 class AVLTree(object):
 
 	"""
-	Constructor, you are allowed to add more fields.
-
+	Constructor
+	O(1)
 	"""
 	def __init__(self, head = AVLNode(None,None)):
 		self.root = head
@@ -224,6 +248,7 @@ class AVLTree(object):
 		# add your fields here
 
 	#Private method used for deletion.
+	#O(h) as in worst case scenario we are descending all way down/up to a leaf/root, and as we are in AVL then O(h)=O(logn)
 	def Successor(self, node):
 		if self.root.get_left().get_key() == None and self.root.get_right().get_key() == None:
 			return None
@@ -242,15 +267,8 @@ class AVLTree(object):
 				return succ
 		return None
 
-	"""searches for a AVLNode in the dictionary corresponding to the key
-
-	@type key: int
-	@param key: a key to be searched
-	@rtype: AVLNode
-	@returns: the AVLNode corresponding to key or None if key is not found.
-	"""
-
 	#Private method used to prevent creating 2 different searches, as the cilent seeks none when key isn't in the AVL
+	#O(h) as we are descending all way down to a leaf, therefore O(logn)
 	def searchCand(self,key,node = None): #Finds the sole candidate for position of key
 		if node == None:
 			node = self.root
@@ -268,6 +286,14 @@ class AVLTree(object):
 				return node
 		return node
 
+	"""searches for a AVLNode in the dictionary corresponding to the key
+
+	@type key: int
+	@param key: a key to be searched
+	@rtype: AVLNode
+	@returns: the AVLNode corresponding to key or None if key is not found.
+	O(logn) - a call to searchCand - O(logn), other actions are O(1).
+	"""
 
 	def search(self, key):
 		if(self.root.get_key() == None):
@@ -282,6 +308,10 @@ class AVLTree(object):
 	#Gets a node in tree and balancing the tree all the way up from it
 	#Returning the number of needed rotations to balance.
 	#Also updates heights
+
+	#Time complexity - per insertionMode it's O(1) because we are rotating only once/twice, while for other cases it's O(h) = O(logn)
+	#because in the worst case scenario we are bubbling all the way up to the root, executing max 2 rotations, each of O(1) complexity,
+	#and due to the fact it's avl tree O(h) = O(logn)
 	def balancing(self,node, insertionMode = False):
 		runner = node  # As the name indicates it's running on all ancestors.
 		result = runner.get_height()
@@ -325,6 +355,7 @@ class AVLTree(object):
 	@param val: the value of the item
 	@rtype: int
 	@returns: the number of rebalancing operation due to AVL rebalancing
+	O(logn) - O(logn) for the search, O(1) for the balancing, and O(1) for the rest. 
 	"""
 	def insert(self, key, val):
 		#Edge case
@@ -346,6 +377,7 @@ class AVLTree(object):
 	@pre: node is a real pointer to a node in self
 	@rtype: int
 	@returns: the number of rebalancing operation due to AVL rebalancing
+	O(logn) - O(logn) for balancing, O(1) for the rest.
 	"""
 	def delete(self, node):
 		self.sz -= 1
@@ -381,14 +413,25 @@ class AVLTree(object):
 		return result
 
 
-	def daq(self, node): # Divide and conquer strategy, private method
-		result = []
-		if node.get_left().is_real_node():
-			result += self.daq(node.get_left())
-		result += [(node.get_key(),node.get_value())]
-		if node.get_right().is_real_node():
-			result += self.daq(node.get_right())
-		return result
+	#Private method
+	#Building sorted array from the tree, by implementing in-order search on the tree.
+	#Time complexity: a quick observation is that we run on each edge twice - once for entering and once for leaving.
+	#As we have N-1 edges for a tree of size N (known fact, discussed in Discreate Math) and the time spent per node is O(1)
+	#Overall time complexity is O(n)
+
+	def daq(self, node, lst):
+		if node.get_key()==None:
+			return
+		self.daq(node.get_left(),lst)
+		lst.append((node.get_key(),node.get_value()))
+		self.daq(node.get_right(),lst)
+		#result = []
+		#if node.get_left().is_real_node():
+		#	result += self.daq(node.get_left())
+		#result += [(node.get_key(),node.get_value())]
+		#if node.get_right().is_real_node():
+		#	result += self.daq(node.get_right())
+		#return result
 
 	"""returns an array representing dictionary 
 
@@ -397,7 +440,9 @@ class AVLTree(object):
 	"""
 
 	def avl_to_array(self):
-		return self.daq(self.root)
+		result = []
+		self.daq(self.root,result)
+		return result
 
 
 	"""returns the number of items in dictionary 
