@@ -1,8 +1,3 @@
-#username - omerdrori
-#id1      - 216002089
-#name1    - omer drori
-
-
 """A class represnting a node in an AVL tree"""
 
 class AVLNode(object):
